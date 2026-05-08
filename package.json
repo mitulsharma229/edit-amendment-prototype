@@ -1,0 +1,26 @@
+{
+  "name": "edit-amendment-prototype",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "deploy": "npm run build && npx gh-pages -d dist"
+  },
+  "dependencies": {
+    "@fluentui/font-icons-mdl2": "^8.5.52",
+    "@fluentui/react": "^8.125.5",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "gh-pages": "^6.3.0",
+    "typescript": "^5.6.2",
+    "vite": "^5.4.10"
+  }
+}
