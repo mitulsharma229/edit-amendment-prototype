@@ -7,7 +7,7 @@ import { Calendar } from '@fluentui/react/lib/Calendar';
 import { Callout, DirectionalHint } from '@fluentui/react/lib/Callout';
 import { Panel, PanelType } from '@fluentui/react/lib/Panel';
 import { Pivot, PivotItem } from '@fluentui/react/lib/Pivot';
-import { IconButton } from '@fluentui/react/lib/Button';
+import { IconButton, ActionButton } from '@fluentui/react/lib/Button';
 import { Label } from '@fluentui/react/lib/Label';
 import { Stack } from '@fluentui/react/lib/Stack';
 import { Text } from '@fluentui/react/lib/Text';
@@ -23,6 +23,8 @@ interface IBookmarkConfig {
   isMandatory: boolean;
   addValidations: boolean;
   allowCustomText: boolean;
+  allowDropdownOptions: boolean;
+  dropdownOptions: string[];
 }
 
 const DATA_TYPE_OPTIONS: IDropdownOption[] = [
@@ -37,26 +39,6 @@ const LOCALE_OPTIONS: IDropdownOption[] = [
   { key: 'de-de', text: 'German (Germany)' },
   { key: 'fr-fr', text: 'French (France)' },
   { key: 'ja-jp', text: 'Japanese (Japan)' },
-];
-
-const START_DATE_PRESETS: IDropdownOption[] = [
-  { key: 'select-date', text: 'Select date' },
-  { key: 'custom', text: 'Add custom text' },
-  { key: 'divider1', text: '-', itemType: 1 },
-  { key: 'header1', text: 'Or select an input', itemType: 2 },
-  { key: 'enrollment-start', text: 'Enrollment Start Date' },
-  { key: 'enrollment-term', text: 'Enrollment Term Anniversary Date' },
-  { key: 'enrollment-service', text: 'Service Anniversary Date' },
-];
-
-const END_DATE_PRESETS: IDropdownOption[] = [
-  { key: 'select-date', text: 'Select date' },
-  { key: 'custom', text: 'Add custom text' },
-  { key: 'divider1', text: '-', itemType: 1 },
-  { key: 'header1', text: 'Or select an input', itemType: 2 },
-  { key: 'enrollment-end', text: 'Enrollment End Date' },
-  { key: 'enrollment-term', text: 'Enrollment Term Anniversary Date' },
-  { key: 'enrollment-service', text: 'Service Anniversary Date' },
 ];
 
 const getClassNames = memoizeFunction((theme: ITheme) =>
@@ -250,6 +232,10 @@ const getClassNames = memoizeFunction((theme: ITheme) =>
       flex: 1,
       position: 'relative' as const,
     },
+    optionBuilderIndent: {
+      borderLeft: `3px solid ${theme.palette.themePrimary}`,
+      paddingLeft: 16,
+    },
   })
 );
 
@@ -282,27 +268,82 @@ const BookmarkConfig: React.FC<{
           />
         </Stack>
 
-        <Stack tokens={{ childrenGap: 6 }}>
-          <Label required>Data Type</Label>
-          <Dropdown
-            selectedKey={config.dataType}
-            options={DATA_TYPE_OPTIONS}
-            onChange={(_, opt) => {
-              if (opt) onChange({ ...config, dataType: opt.key as string });
-            }}
-            styles={{ dropdown: { width: 140 } }}
-          />
-        </Stack>
-
-        {config.dataType === 'date' && (
-          <Stack verticalAlign="end">
-            <Checkbox
-              label="Allow custom text"
-              checked={config.allowCustomText}
-              onChange={(_, checked) => onChange({ ...config, allowCustomText: !!checked })}
+        <Stack tokens={{ childrenGap: 10 }} styles={{ root: { alignItems: 'flex-start' } }}>
+          <Stack tokens={{ childrenGap: 6 }}>
+            <Label required>Data Type</Label>
+            <Dropdown
+              selectedKey={config.dataType}
+              options={DATA_TYPE_OPTIONS}
+              onChange={(_, opt) => {
+                if (opt) {
+                  onChange({
+                    ...config,
+                    dataType: opt.key as string,
+                    allowCustomText: false,
+                    allowDropdownOptions: false,
+                    dropdownOptions: [],
+                  });
+                }
+              }}
+              styles={{ dropdown: { width: 140 } }}
             />
           </Stack>
-        )}
+
+          {config.dataType === 'date' && (
+            <Stack tokens={{ childrenGap: 8 }}>
+              <Checkbox
+                label="Allow custom text"
+                checked={config.allowCustomText}
+                onChange={(_, checked) => onChange({ ...config, allowCustomText: !!checked })}
+              />
+              <Stack tokens={{ childrenGap: 6 }}>
+                <Checkbox
+                  label="Allow dropdown options"
+                  checked={config.allowDropdownOptions}
+                  onChange={(_, checked) => onChange({
+                    ...config,
+                    allowDropdownOptions: !!checked,
+                    dropdownOptions: checked ? (config.dropdownOptions.length > 0 ? config.dropdownOptions : ['']) : [],
+                  })}
+                />
+                {config.allowDropdownOptions && (
+                  <div className={classNames.optionBuilderIndent}>
+                    <Stack tokens={{ childrenGap: 8 }}>
+                      {(config.dropdownOptions.length === 0 ? [''] : config.dropdownOptions).map((opt, i) => (
+                        <Stack key={i} horizontal verticalAlign="center" tokens={{ childrenGap: 8 }}>
+                          <Stack.Item grow={1}>
+                            <TextField
+                              placeholder={`Option ${i + 1}`}
+                              value={opt}
+                              onChange={(_, val) => {
+                                const next = [...config.dropdownOptions];
+                                next[i] = val || '';
+                                onChange({ ...config, dropdownOptions: next });
+                              }}
+                            />
+                          </Stack.Item>
+                          <IconButton
+                            iconProps={{ iconName: 'Delete' }}
+                            ariaLabel={`Remove option ${i + 1}`}
+                            title="Remove option"
+                            styles={{ root: { color: theme.palette.neutralSecondary } }}
+                            onClick={() => onChange({ ...config, dropdownOptions: config.dropdownOptions.filter((_, j) => j !== i) })}
+                          />
+                        </Stack>
+                      ))}
+                      <ActionButton
+                        iconProps={{ iconName: 'Add' }}
+                        text="Add option"
+                        styles={{ root: { paddingLeft: 0, height: 32 } }}
+                        onClick={() => onChange({ ...config, dropdownOptions: [...config.dropdownOptions, ''] })}
+                      />
+                    </Stack>
+                  </div>
+                )}
+              </Stack>
+            </Stack>
+          )}
+        </Stack>
       </Stack>
 
       <Stack tokens={{ childrenGap: 6 }} styles={{ root: { marginBottom: 16 } }}>
@@ -337,9 +378,9 @@ export const Requirement2Page: React.FC = () => {
   const [isPanelOpen, setIsPanelOpen] = React.useState(false);
 
   const [bookmarks, setBookmarks] = React.useState<IBookmarkConfig[]>([
-    { fieldLabel: 'Start date', dataType: 'date', description: '', isMandatory: false, addValidations: false, allowCustomText: false },
-    { fieldLabel: 'End Date', dataType: 'date', description: '', isMandatory: false, addValidations: false, allowCustomText: false },
-    { fieldLabel: 'Discount %', dataType: 'number', description: '', isMandatory: false, addValidations: false, allowCustomText: false },
+    { fieldLabel: 'Start date', dataType: 'date', description: '', isMandatory: false, addValidations: false, allowCustomText: false, allowDropdownOptions: false, dropdownOptions: [] },
+    { fieldLabel: 'End Date', dataType: 'date', description: '', isMandatory: false, addValidations: false, allowCustomText: false, allowDropdownOptions: false, dropdownOptions: [] },
+    { fieldLabel: 'Discount %', dataType: 'number', description: '', isMandatory: false, addValidations: false, allowCustomText: false, allowDropdownOptions: false, dropdownOptions: [] },
   ]);
 
   const bookmarkIds = ['H01_S05_01', 'H01_S05_02', 'H01_S05_03'];
@@ -376,19 +417,27 @@ export const Requirement2Page: React.FC = () => {
   const formatDate = (d: Date) => d.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
   const getStartDateOptions = (): IComboBoxOption[] => {
-    const base: IComboBoxOption[] = START_DATE_PRESETS.map((o) => ({ key: o.key, text: o.text, itemType: o.itemType }));
-    if (!bookmarks[0].allowCustomText) {
-      return base.filter((o) => o.key !== 'custom');
+    const opts: IComboBoxOption[] = [{ key: 'select-date', text: 'Select date' }];
+    if (bookmarks[0].allowCustomText) opts.push({ key: 'custom', text: 'Add custom text' });
+    const valid = bookmarks[0].dropdownOptions.filter(o => o.trim());
+    if (bookmarks[0].allowDropdownOptions && valid.length > 0) {
+      opts.push({ key: 'divider1', text: '-', itemType: 1 });
+      opts.push({ key: 'header1', text: 'Or select an option', itemType: 2 });
+      valid.forEach((o, i) => opts.push({ key: `start-opt-${i}`, text: o }));
     }
-    return base;
+    return opts;
   };
 
   const getEndDateOptions = (): IComboBoxOption[] => {
-    const base: IComboBoxOption[] = END_DATE_PRESETS.map((o) => ({ key: o.key, text: o.text, itemType: o.itemType }));
-    if (!bookmarks[1].allowCustomText) {
-      return base.filter((o) => o.key !== 'custom');
+    const opts: IComboBoxOption[] = [{ key: 'select-date', text: 'Select date' }];
+    if (bookmarks[1].allowCustomText) opts.push({ key: 'custom', text: 'Add custom text' });
+    const valid = bookmarks[1].dropdownOptions.filter(o => o.trim());
+    if (bookmarks[1].allowDropdownOptions && valid.length > 0) {
+      opts.push({ key: 'divider1', text: '-', itemType: 1 });
+      opts.push({ key: 'header1', text: 'Or select an option', itemType: 2 });
+      valid.forEach((o, i) => opts.push({ key: `end-opt-${i}`, text: o }));
     }
-    return base;
+    return opts;
   };
 
   const getStartDateText = (): string | undefined => {
@@ -631,7 +680,7 @@ export const Requirement2Page: React.FC = () => {
                             {/* Start Date cell */}
                             <div className={classNames.tableInputCell} ref={startDateCellRef}>
                               <ComboBox
-                                placeholder="Select date"
+                                placeholder={startDateMode === 'custom' ? 'Input text' : 'Select date'}
                                 text={getStartDateText()}
                                 selectedKey={getStartDateSelectedKey()}
                                 options={getStartDateOptions()}
@@ -666,7 +715,7 @@ export const Requirement2Page: React.FC = () => {
                             {/* End Date cell */}
                             <div className={classNames.tableInputCell} ref={endDateCellRef}>
                               <ComboBox
-                                placeholder="Select date"
+                                placeholder={endDateMode === 'custom' ? 'Input text' : 'Select date'}
                                 text={getEndDateText()}
                                 selectedKey={getEndDateSelectedKey()}
                                 options={getEndDateOptions()}
