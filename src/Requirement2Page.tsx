@@ -12,6 +12,7 @@ import { Label } from '@fluentui/react/lib/Label';
 import { Stack } from '@fluentui/react/lib/Stack';
 import { Text } from '@fluentui/react/lib/Text';
 import { Icon } from '@fluentui/react/lib/Icon';
+import { TooltipHost } from '@fluentui/react/lib/Tooltip';
 import { useTheme, ITheme } from '@fluentui/react';
 import { mergeStyleSets } from '@fluentui/merge-styles';
 import { memoizeFunction } from '@fluentui/utilities';
@@ -291,21 +292,31 @@ const BookmarkConfig: React.FC<{
 
           {config.dataType === 'date' && (
             <Stack tokens={{ childrenGap: 8 }}>
-              <Checkbox
-                label="Allow custom text"
-                checked={config.allowCustomText}
-                onChange={(_, checked) => onChange({ ...config, allowCustomText: !!checked })}
-              />
-              <Stack tokens={{ childrenGap: 6 }}>
+              <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 6 }}>
                 <Checkbox
-                  label="Allow dropdown options"
-                  checked={config.allowDropdownOptions}
-                  onChange={(_, checked) => onChange({
-                    ...config,
-                    allowDropdownOptions: !!checked,
-                    dropdownOptions: checked ? (config.dropdownOptions.length > 0 ? config.dropdownOptions : ['']) : [],
-                  })}
+                  label="Allow custom text"
+                  checked={config.allowCustomText}
+                  onChange={(_, checked) => onChange({ ...config, allowCustomText: !!checked })}
                 />
+                <TooltipHost content="Adds the ability to let the user input a custom value for a date" calloutProps={{ role: 'tooltip' }}>
+                  <Icon iconName="Info" aria-label="Allow custom text info" styles={{ root: { fontSize: 12, color: theme.palette.neutralSecondary, cursor: 'default' } }} />
+                </TooltipHost>
+              </Stack>
+              <Stack tokens={{ childrenGap: 6 }}>
+                <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 6 }}>
+                  <Checkbox
+                    label="Allow dropdown options"
+                    checked={config.allowDropdownOptions}
+                    onChange={(_, checked) => onChange({
+                      ...config,
+                      allowDropdownOptions: !!checked,
+                      dropdownOptions: checked ? (config.dropdownOptions.length > 0 ? config.dropdownOptions : ['']) : [],
+                    })}
+                  />
+                  <TooltipHost content="Adds the ability to show a list of values that the user can input for a date. You can customise these value options below." calloutProps={{ role: 'tooltip' }}>
+                    <Icon iconName="Info" aria-label="Allow dropdown options info" styles={{ root: { fontSize: 12, color: theme.palette.neutralSecondary, cursor: 'default' } }} />
+                  </TooltipHost>
+                </Stack>
                 {config.allowDropdownOptions && (
                   <div className={classNames.optionBuilderIndent}>
                     <Stack tokens={{ childrenGap: 8 }}>
