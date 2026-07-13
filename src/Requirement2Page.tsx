@@ -257,36 +257,16 @@ const BookmarkConfig: React.FC<{
       </Stack>
 
       <Stack horizontal tokens={{ childrenGap: 32 }} styles={{ root: { marginBottom: 16 } }}>
-        <Stack tokens={{ childrenGap: 6 }}>
-          <Label>Field Label</Label>
-          <TextField
-            value={config.fieldLabel}
-            onChange={(_, val) => onChange({ ...config, fieldLabel: val || '' })}
-            styles={{
-              root: { width: 200 },
-              fieldGroup: { backgroundColor: theme.palette.neutralLighter },
-            }}
-          />
-        </Stack>
-
         <Stack tokens={{ childrenGap: 10 }} styles={{ root: { alignItems: 'flex-start' } }}>
           <Stack tokens={{ childrenGap: 6 }}>
-            <Label required>Data Type</Label>
-            <Dropdown
-              selectedKey={config.dataType}
-              options={DATA_TYPE_OPTIONS}
-              onChange={(_, opt) => {
-                if (opt) {
-                  onChange({
-                    ...config,
-                    dataType: opt.key as string,
-                    allowCustomText: false,
-                    allowDropdownOptions: false,
-                    dropdownOptions: [],
-                  });
-                }
+            <Label>Field Label</Label>
+            <TextField
+              value={config.fieldLabel}
+              onChange={(_, val) => onChange({ ...config, fieldLabel: val || '' })}
+              styles={{
+                root: { width: 200 },
+                fieldGroup: { backgroundColor: theme.palette.neutralLighter },
               }}
-              styles={{ dropdown: { width: 140 } }}
             />
           </Stack>
 
@@ -354,6 +334,26 @@ const BookmarkConfig: React.FC<{
               </Stack>
             </Stack>
           )}
+        </Stack>
+
+        <Stack tokens={{ childrenGap: 6 }}>
+          <Label required>Data Type</Label>
+          <Dropdown
+            selectedKey={config.dataType}
+            options={DATA_TYPE_OPTIONS}
+            onChange={(_, opt) => {
+              if (opt) {
+                onChange({
+                  ...config,
+                  dataType: opt.key as string,
+                  allowCustomText: false,
+                  allowDropdownOptions: false,
+                  dropdownOptions: [],
+                });
+              }
+            }}
+            styles={{ dropdown: { width: 140 } }}
+          />
         </Stack>
       </Stack>
 
