@@ -6,6 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "wasm-build": "node wasm-build.mjs",
+    "wasm-serve": "node wasm-serve.mjs",
+    "wasm-dev": "node wasm-build.mjs && node wasm-serve.mjs",
+    "wasm-deploy": "node wasm-build.mjs --prod && npx gh-pages -d dist",
     "preview": "vite preview",
     "deploy": "npm run build && npx gh-pages -d dist"
   },
