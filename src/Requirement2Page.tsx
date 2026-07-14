@@ -1,6 +1,5 @@
 import * as React from 'react';
-import { Dropdown, IDropdownOption } from '@fluentui/react/lib/Dropdown';
-import { ComboBox, IComboBoxOption } from '@fluentui/react/lib/ComboBox';
+import { Dropdown, IDropdownOption, DropdownMenuItemType } from '@fluentui/react/lib/Dropdown';
 import { TextField } from '@fluentui/react/lib/TextField';
 import { Checkbox } from '@fluentui/react/lib/Checkbox';
 import { Calendar } from '@fluentui/react/lib/Calendar';
@@ -419,98 +418,116 @@ export const Requirement2Page: React.FC = () => {
   const [startDate, setStartDate] = React.useState<Date | undefined>(undefined);
   const [startCustomText, setStartCustomText] = React.useState('');
   const [startPresetKey, setStartPresetKey] = React.useState('');
+  const [startCustomEditing, setStartCustomEditing] = React.useState(false);
 
   const [endDateMode, setEndDateMode] = React.useState<DateCellMode>('dropdown');
   const [endDate, setEndDate] = React.useState<Date | undefined>(undefined);
   const [endCustomText, setEndCustomText] = React.useState('');
   const [endPresetKey, setEndPresetKey] = React.useState('');
+  const [endCustomEditing, setEndCustomEditing] = React.useState(false);
 
   const formatDate = (d: Date) => d.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
-  const getStartDateOptions = (): IComboBoxOption[] => {
-    const opts: IComboBoxOption[] = [{ key: 'select-date', text: 'Select date' }];
+  const getStartDateOptions = (): IDropdownOption[] => {
+    const opts: IDropdownOption[] = [];
+    if (startDateMode === 'custom' && startCustomText.trim()) {
+      opts.push({ key: 'custom-value', text: startCustomText });
+    }
+    if (startDateMode === 'selectDate' && startDate) {
+      opts.push({ key: 'selected-date', text: formatDate(startDate) });
+    }
+    opts.push({ key: 'select-date', text: 'Select date' });
     if (bookmarks[0].allowCustomText) opts.push({ key: 'custom', text: 'Add custom text' });
     const valid = bookmarks[0].dropdownOptions.filter(o => o.trim());
     if (bookmarks[0].allowDropdownOptions && valid.length > 0) {
-      opts.push({ key: 'divider1', text: '-', itemType: 1 });
-      opts.push({ key: 'header1', text: 'Or select an option', itemType: 2 });
+      opts.push({ key: 'divider1', text: '-', itemType: DropdownMenuItemType.Divider });
+      opts.push({ key: 'header1', text: 'Or select an option', itemType: DropdownMenuItemType.Header });
       valid.forEach((o, i) => opts.push({ key: `start-opt-${i}`, text: o }));
     }
     return opts;
   };
 
-  const getEndDateOptions = (): IComboBoxOption[] => {
-    const opts: IComboBoxOption[] = [{ key: 'select-date', text: 'Select date' }];
+  const getEndDateOptions = (): IDropdownOption[] => {
+    const opts: IDropdownOption[] = [];
+    if (endDateMode === 'custom' && endCustomText.trim()) {
+      opts.push({ key: 'custom-value', text: endCustomText });
+    }
+    if (endDateMode === 'selectDate' && endDate) {
+      opts.push({ key: 'selected-date', text: formatDate(endDate) });
+    }
+    opts.push({ key: 'select-date', text: 'Select date' });
     if (bookmarks[1].allowCustomText) opts.push({ key: 'custom', text: 'Add custom text' });
     const valid = bookmarks[1].dropdownOptions.filter(o => o.trim());
     if (bookmarks[1].allowDropdownOptions && valid.length > 0) {
-      opts.push({ key: 'divider1', text: '-', itemType: 1 });
-      opts.push({ key: 'header1', text: 'Or select an option', itemType: 2 });
+      opts.push({ key: 'divider1', text: '-', itemType: DropdownMenuItemType.Divider });
+      opts.push({ key: 'header1', text: 'Or select an option', itemType: DropdownMenuItemType.Header });
       valid.forEach((o, i) => opts.push({ key: `end-opt-${i}`, text: o }));
     }
     return opts;
   };
 
-  const getStartDateText = (): string | undefined => {
-    if (startDateMode === 'selectDate') return startDate ? formatDate(startDate) : undefined;
-    if (startDateMode === 'custom') return startCustomText;
-    return undefined;
-  };
-
   const getStartDateSelectedKey = (): string | undefined => {
-    if (startDateMode === 'selectDate' && !startDate) return 'select-date';
+    if (startDateMode === 'custom') return startCustomText.trim() ? 'custom-value' : undefined;
+    if (startDateMode === 'selectDate') return startDate ? 'selected-date' : 'select-date';
     if (startDateMode === 'preset') return startPresetKey;
     return undefined;
   };
 
-  const getEndDateText = (): string | undefined => {
-    if (endDateMode === 'selectDate') return endDate ? formatDate(endDate) : undefined;
-    if (endDateMode === 'custom') return endCustomText;
-    return undefined;
-  };
-
   const getEndDateSelectedKey = (): string | undefined => {
-    if (endDateMode === 'selectDate' && !endDate) return 'select-date';
+    if (endDateMode === 'custom') return endCustomText.trim() ? 'custom-value' : undefined;
+    if (endDateMode === 'selectDate') return endDate ? 'selected-date' : 'select-date';
     if (endDateMode === 'preset') return endPresetKey;
     return undefined;
   };
 
-  const handleStartDateChange = (_: React.FormEvent<unknown>, option?: IComboBoxOption, _idx?: number, value?: string) => {
-    if (option) {
-      const key = option.key as string;
-      if (key === 'select-date') {
-        setStartDateMode('selectDate');
-        setStartDate(undefined);
-        setShowStartCalendar(true);
-      } else if (key === 'custom') {
-        setStartDateMode('custom');
-        setStartCustomText('');
-      } else {
-        setStartDateMode('preset');
-        setStartPresetKey(key);
-      }
-    } else if (value !== undefined && startDateMode === 'custom') {
-      setStartCustomText(value);
+  const handleStartDateChange = (_: React.FormEvent<unknown>, option?: IDropdownOption) => {
+    if (!option) return;
+    const key = option.key as string;
+    if (key === 'custom-value' || key === 'selected-date') {
+      // Re-selecting the current value: no change.
+      return;
+    }
+    if (key === 'select-date') {
+      setStartDateMode('selectDate');
+      setStartDate(undefined);
+      setShowStartCalendar(true);
+    } else if (key === 'custom') {
+      // Enter inline edit mode; keep any existing custom text so it can be tweaked.
+      setStartDateMode('custom');
+      setStartCustomEditing(true);
+    } else {
+      setStartDateMode('preset');
+      setStartPresetKey(key);
     }
   };
 
-  const handleEndDateChange = (_: React.FormEvent<unknown>, option?: IComboBoxOption, _idx?: number, value?: string) => {
-    if (option) {
-      const key = option.key as string;
-      if (key === 'select-date') {
-        setEndDateMode('selectDate');
-        setEndDate(undefined);
-        setShowEndCalendar(true);
-      } else if (key === 'custom') {
-        setEndDateMode('custom');
-        setEndCustomText('');
-      } else {
-        setEndDateMode('preset');
-        setEndPresetKey(key);
-      }
-    } else if (value !== undefined && endDateMode === 'custom') {
-      setEndCustomText(value);
+  const commitStartCustom = () => {
+    setStartCustomEditing(false);
+    if (!startCustomText.trim()) setStartDateMode('dropdown');
+  };
+
+  const handleEndDateChange = (_: React.FormEvent<unknown>, option?: IDropdownOption) => {
+    if (!option) return;
+    const key = option.key as string;
+    if (key === 'custom-value' || key === 'selected-date') {
+      return;
     }
+    if (key === 'select-date') {
+      setEndDateMode('selectDate');
+      setEndDate(undefined);
+      setShowEndCalendar(true);
+    } else if (key === 'custom') {
+      setEndDateMode('custom');
+      setEndCustomEditing(true);
+    } else {
+      setEndDateMode('preset');
+      setEndPresetKey(key);
+    }
+  };
+
+  const commitEndCustom = () => {
+    setEndCustomEditing(false);
+    if (!endCustomText.trim()) setEndDateMode('dropdown');
   };
 
   return (
@@ -690,21 +707,25 @@ export const Requirement2Page: React.FC = () => {
 
                             {/* Start Date cell */}
                             <div className={classNames.tableInputCell} ref={startDateCellRef}>
-                              <ComboBox
-                                placeholder={startDateMode === 'custom' ? 'Input text' : 'Select date'}
-                                text={getStartDateText()}
-                                selectedKey={getStartDateSelectedKey()}
-                                options={getStartDateOptions()}
-                                allowFreeform={startDateMode === 'custom'}
-                                autoComplete="off"
-                                onChange={handleStartDateChange}
-                                onPendingValueChanged={(_opt, _idx, value) => {
-                                  if (startDateMode === 'custom' && value !== undefined) {
-                                    setStartCustomText(value);
-                                  }
-                                }}
-                                styles={{ root: { width: '100%' } }}
-                              />
+                              {startCustomEditing ? (
+                                <TextField
+                                  autoFocus
+                                  placeholder="Input text"
+                                  value={startCustomText}
+                                  onChange={(_, val) => setStartCustomText(val || '')}
+                                  onBlur={commitStartCustom}
+                                  onKeyDown={(e) => { if (e.key === 'Enter') commitStartCustom(); }}
+                                  styles={{ root: { width: '100%' } }}
+                                />
+                              ) : (
+                                <Dropdown
+                                  placeholder="Select date"
+                                  selectedKey={getStartDateSelectedKey()}
+                                  options={getStartDateOptions()}
+                                  onChange={handleStartDateChange}
+                                  styles={{ dropdown: { width: '100%' } }}
+                                />
+                              )}
                               {showStartCalendar && (
                                 <Callout
                                   target={startDateCellRef.current}
@@ -725,21 +746,25 @@ export const Requirement2Page: React.FC = () => {
 
                             {/* End Date cell */}
                             <div className={classNames.tableInputCell} ref={endDateCellRef}>
-                              <ComboBox
-                                placeholder={endDateMode === 'custom' ? 'Input text' : 'Select date'}
-                                text={getEndDateText()}
-                                selectedKey={getEndDateSelectedKey()}
-                                options={getEndDateOptions()}
-                                allowFreeform={endDateMode === 'custom'}
-                                autoComplete="off"
-                                onChange={handleEndDateChange}
-                                onPendingValueChanged={(_opt, _idx, value) => {
-                                  if (endDateMode === 'custom' && value !== undefined) {
-                                    setEndCustomText(value);
-                                  }
-                                }}
-                                styles={{ root: { width: '100%' } }}
-                              />
+                              {endCustomEditing ? (
+                                <TextField
+                                  autoFocus
+                                  placeholder="Input text"
+                                  value={endCustomText}
+                                  onChange={(_, val) => setEndCustomText(val || '')}
+                                  onBlur={commitEndCustom}
+                                  onKeyDown={(e) => { if (e.key === 'Enter') commitEndCustom(); }}
+                                  styles={{ root: { width: '100%' } }}
+                                />
+                              ) : (
+                                <Dropdown
+                                  placeholder="Select date"
+                                  selectedKey={getEndDateSelectedKey()}
+                                  options={getEndDateOptions()}
+                                  onChange={handleEndDateChange}
+                                  styles={{ dropdown: { width: '100%' } }}
+                                />
+                              )}
                               {showEndCalendar && (
                                 <Callout
                                   target={endDateCellRef.current}
